@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./src/app
+      dockerfile: Dockerfile.api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./model:/app/model
+
+  front:
+    build:
+      context: ./src/app
+      dockerfile: Dockerfile.front
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api

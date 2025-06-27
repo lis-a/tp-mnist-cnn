@@ -38,7 +38,7 @@ if canvas_result.image_data is not None:
         files = {"file": ("image.png", buffered.getvalue(), "image/png")}
 
         try:
-            response = requests.post("http://localhost:8000/api/v1/predict", files=files)
+            response = requests.post("http://api:8000/api/v1/predict", files=files)
             if response.status_code == 200:
                 st.success(f"✨ Chiffre prédit : **{response.json()['prediction']}**")
             else:

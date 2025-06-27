@@ -39,11 +39,12 @@ class ConvNet(nn.Module):
 
 
 # 🔁 Charger le modèle
+MODEL_PATH = "model/mnist-0.0.1.pt"
 input_size = 28 * 28
 n_kernels = 6
 output_size = 10
 model = ConvNet(input_size, n_kernels, output_size)
-model.load_state_dict(torch.load("model/mnist-0.0.1.pt", map_location="cpu"))
+model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
 model.eval()
 
 # 🔄 Transformation à appliquer à l’image reçue
