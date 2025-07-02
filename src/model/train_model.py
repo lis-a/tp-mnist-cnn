@@ -1,5 +1,3 @@
-# src/model/train_model.py
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,27 +5,32 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import os
 
-
 # Détection GPU
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Transformations
+# Transformations avec augmentation
 tf = transforms.Compose([
+    transforms.RandomRotation(10),
+    transforms.RandomAffine(0, translate=(0.1, 0.1)),
     transforms.ToTensor(),
     transforms.Normalize((0.1307,), (0.3081,))
 ])
 
-# Chargement des données
+# Données
 train_loader = DataLoader(
     datasets.MNIST("../data/raw", train=True, download=True, transform=tf),
-    batch_size=64, shuffle=True)
+    batch_size=64, shuffle=True
+)
 
 test_loader = DataLoader(
-    datasets.MNIST("../data/raw", train=False, download=True, transform=tf),
-    batch_size=64, shuffle=True)
+    datasets.MNIST("../data/raw", train=False, download=True, transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])),
+    batch_size=64, shuffle=False
+)
 
-
-# Modèle CNN
+# Modèle CNN amélioré
 class ConvNet(nn.Module):
     def __init__(self, input_size, n_kernels, output_size):
         super().__init__()
@@ -40,21 +43,21 @@ class ConvNet(nn.Module):
             nn.MaxPool2d(2),
             nn.Flatten(),
             nn.Linear(n_kernels * 4 * 4, 50),
+            nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(50, output_size)
         )
 
     def forward(self, x):
         return self.net(x)
 
-
-# Fonction d'entraînement
-def train(model, perm=torch.arange(0, 784).long(), n_epoch=1):
+# Entraînement
+def train(model, n_epoch=5):
     model.train()
-    optimizer = torch.optim.AdamW(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters())
     for epoch in range(n_epoch):
         for step, (data, target) in enumerate(train_loader):
             data, target = data.to(device), target.to(device)
-            data = data.view(-1, 28*28)[:, perm].view(-1, 1, 28, 28)
             optimizer.zero_grad()
             logits = model(data)
             loss = F.cross_entropy(logits, target)
@@ -63,16 +66,14 @@ def train(model, perm=torch.arange(0, 784).long(), n_epoch=1):
             if step % 100 == 0:
                 print(f"epoch={epoch}, step={step}: train loss={loss.item():.4f}")
 
-
-# Fonction de test
-def test(model, perm=torch.arange(0, 784).long()):
+# Test
+def test(model):
     model.eval()
     test_loss = 0
     correct = 0
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
-            data = data.view(-1, 28*28)[:, perm].view(-1, 1, 28, 28)
             logits = model(data)
             test_loss += F.cross_entropy(logits, target, reduction='sum').item()
             pred = torch.argmax(logits, dim=1)
@@ -81,19 +82,17 @@ def test(model, perm=torch.arange(0, 784).long()):
     accuracy = correct / len(test_loader.dataset)
     print(f"test loss={test_loss:.4f}, accuracy={accuracy:.4f}")
 
-
-# Lancement (équivalent de main)
+# Main
 if __name__ == "__main__":
     input_size = 28 * 28
     output_size = 10
-    n_kernels = 6
-    perm = torch.arange(0, 784).long()
+    n_kernels = 32
 
     model = ConvNet(input_size, n_kernels, output_size).to(device)
     print(f"Parameters={sum(p.numel() for p in model.parameters())/1e3:.3f}K")
 
-    train(model, perm=perm)
-    test(model, perm=perm)
+    train(model, n_epoch=5)
+    test(model)
 
     os.makedirs("../model", exist_ok=True)
     torch.save(model.state_dict(), "../model/mnist-0.0.1.pt")
