@@ -1,6 +1,7 @@
 # MNIST – Deep Learning & MLOps
 
 **Auteurs** : AU Lisa, HENRY Dorine
+
 **Classe** : M2 TL - DC Paris
 
 ## Présentation du projet
@@ -173,22 +174,6 @@ pip install streamlit streamlit-drawable-canvas
 
 Faciliter le déploiement du projet en encapsulant l’API FastAPI et l’interface Streamlit dans des conteneurs Docker, orchestrés via `docker-compose`.
 
-### 🧱 Structure du projet
-
-````bash
-.
-├── docker-compose.yml
-├── model/
-│ └── mnist-0.0.1.pt
-└── src/
-├── app/
-│ ├── main.py
-│ ├── front.py
-│ ├── Dockerfile.api
-│ └── Dockerfile.front
-└── model/
-  └── train_model.py
-`````
 
 #### 🏗️ Construire et lancer l’environnement
 
@@ -201,6 +186,48 @@ L’interface Streamlit est disponible sur : http://localhost:8501
 
 ---
 
+## 7. 🏗️ Industrialisation du projet
+Afin de préparer le projet à une mise en production robuste et maintenable, nous avons structuré le dépôt en suivant une architecture claire, inspirée des bonnes pratiques MLOps :
+
+````bash
+TP1/
+├── model/                      # Modèle entraîné au format .pt
+├── data/                      # Données MNIST téléchargées
+│   └── raw/                   # Données brutes
+├── notebook/                  # Fichiers exploratoires Jupyter
+│   └── init.ipynb
+├── src/                       # Code source Python
+│   ├── model/                 # Script d'entraînement du modèle
+│   │   └── train_model.py
+│   └── app/                   # Application API + Frontend
+│       ├── main.py            # Code de l'API FastAPI
+│       ├── front.py           # Interface utilisateur Streamlit
+│       ├── Dockerfile.api     # Dockerfile pour l'API
+│       └── Dockerfile.front   # Dockerfile pour le front
+├── docker-compose.yml         # Orchestration des services API/Front
+├── .gitignore                 # Fichiers à exclure du suivi Git
+└── README.md                  # Présentation du projet
+
+`````
+
+### ⚙️ Principes appliqués
+
+- **Séparation des rôles** :
+  - Le code de data science exploratoire (`notebook/`) est isolé du code de production (`src/`).
+  - Le modèle est sauvegardé dans un dossier à part (`model/`) pour faciliter les déploiements.
+
+- **Modularité** :
+  - L’API (`main.py`) est indépendante du front (`front.py`) et chacun a son propre Dockerfile.
+
+- **Prêt pour le déploiement** :
+  - Grâce à `docker-compose.yml`, le projet est déployable localement ou en production en une seule commande.
+  - Les dépendances sont isolées dans des conteneurs.
+
+- **MLOps niveau 1** :
+  - Le déploiement du modèle est automatisé via un **workflow GitHub Actions** qui construit et pousse l'image Docker sur Docker Hub après chaque commit.
+
+
+---
 
 ## 8. Déploiement automatique avec GitHub Actions (MLOps Niveau 1)
 
